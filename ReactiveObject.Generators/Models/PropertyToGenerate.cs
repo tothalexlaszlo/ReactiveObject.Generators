@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
-
-namespace ReactiveObject.Generators.Models;
+﻿namespace ReactiveObject.Generators.Models;
 
 public readonly struct PropertyToGenerate
 {
