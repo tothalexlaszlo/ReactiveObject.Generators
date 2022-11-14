@@ -1,27 +1,25 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Immutable;
+using System.Text;
+
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+
 using ReactiveObject.Generators.Models;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace ReactiveObject.Generators;
 
 [Generator]
 public class ReactivePropertySourceGenerator : IIncrementalGenerator
 {
-    private const string _reactivePropertyAttribute = "ReactiveProperty";
-    private const string _reactivePropertyAttributeFullName = $"{nameof(ReactiveObject)}.{nameof(Generators)}.{nameof(ReactivePropertyAttribute)}";
+    private const string ReactivePropertyAttribute = "ReactiveProperty";
+    private const string ReactivePropertyAttributeFullName = $"{nameof(ReactiveObject)}.{nameof(Generators)}.{nameof(Generators.ReactivePropertyAttribute)}";
 
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Add the marker attribute to the compilation
-        context.RegisterPostInitializationOutput(ctx => ctx.AddSource($"{nameof(ReactivePropertyAttribute)}.g.cs", SourceText.From(SourceGenerationHelper.Attribute, Encoding.UTF8)));
+        context.RegisterPostInitializationOutput(ctx => ctx.AddSource($"{nameof(ReactivePropertyAttribute)}.g.cs", SourceText.From(Constants.Attribute, Encoding.UTF8)));
 
         // Do a simple filter for classes
         var classDeclarations = context.SyntaxProvider
@@ -31,10 +29,10 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
             .Where(static m => m is not null)!; // filter out attributed class that we don't care about
 
         // Combine the selected classes with the `Compilation`
-        IncrementalValueProvider<(Compilation, ImmutableArray<ClassDeclarationSyntax>)> compilationAndProperties = context.CompilationProvider.Combine(classDeclarations.Collect());
+        var compilationAndProperties = context.CompilationProvider.Combine(classDeclarations.Collect());
 
         // Generate the source using the compilation and classes
-        context.RegisterSourceOutput(compilationAndProperties, static (sourceProductionContext, source) => Execute(source.Item1, source.Item2, sourceProductionContext));
+        context.RegisterSourceOutput(compilationAndProperties, static (sourceProductionContext, source) => Execute(source.Left, source.Right, sourceProductionContext));
     }
 
     /// <summary>
@@ -77,7 +75,7 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
                     var fullName = attributeContainingTypeSymbol.ToDisplayString();
 
                     // Is the attribute the [ReactiveProperty] attribute?
-                    if (fullName.Equals(_reactivePropertyAttributeFullName, System.StringComparison.Ordinal))
+                    if (fullName.Equals(ReactivePropertyAttributeFullName, System.StringComparison.Ordinal))
                     {
                         // Return the property.
                         return classDeclarationSyntax;
@@ -90,7 +88,7 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
         return null;
     }
 
-    private static void Execute(Compilation compilation, in ImmutableArray<ClassDeclarationSyntax> fields, in SourceProductionContext context)
+    private static void Execute(Compilation compilation, in ImmutableArray<ClassDeclarationSyntax?> fields, in SourceProductionContext context)
     {
         if (fields.IsDefaultOrEmpty)
         {
@@ -105,7 +103,7 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
         var distinctFields = fields.Distinct();
 
         // Convert each ClassDeclarationSyntax to an EnumToGenerate.
-        List<ClassToGenerate> classesToGenerate = GetTypesToGenerate(compilation, distinctFields, context.CancellationToken);
+        var classesToGenerate = GetTypesToGenerate(compilation, distinctFields, context.CancellationToken);
 
         // If there were errors in the ClassDeclarationSyntax, we won't create a
         // ClassToGenerate for it, so make sure we have something to generate.
@@ -113,16 +111,16 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
         {
             // Generate the source code and add it to the output.
             string result = SourceGenerationHelper.GenerateExtensionClass(classToGenerate);
-            context.AddSource($"{classToGenerate.Name}{_reactivePropertyAttribute}.g.cs", SourceText.From(result, Encoding.UTF8));
+            context.AddSource($"{classToGenerate.Name}{ReactivePropertyAttribute}.g.cs", SourceText.From(result, Encoding.UTF8));
         }
     }
 
-    private static List<ClassToGenerate> GetTypesToGenerate(Compilation compilation, IEnumerable<ClassDeclarationSyntax> classes, in CancellationToken cancellationToken)
+    private static List<ClassToGenerate> GetTypesToGenerate(Compilation compilation, IEnumerable<ClassDeclarationSyntax?> classes, CancellationToken cancellationToken)
     {
         var classesToGenerate = new List<ClassToGenerate>();
 
         // Get the semantic representation of our marker attribute.
-        var ownAttribute = compilation.GetTypeByMetadataName(_reactivePropertyAttributeFullName);
+        var ownAttribute = compilation.GetTypeByMetadataName(ReactivePropertyAttributeFullName);
         if (ownAttribute is null)
         {
             // If this is null, the compilation couldn't find the marker attribute type
@@ -130,14 +128,14 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
             return classesToGenerate;
         }
 
-        foreach (var classDeclarationSyntax in classes)
+        foreach (var classDeclarationSyntax in classes.Where(x => x is not null).Select(x => x!))
         {
             // Stop if we're asked to.
             cancellationToken.ThrowIfCancellationRequested();
 
             // Get the semantic representation of the class syntax.
             var semanticModel = compilation.GetSemanticModel(classDeclarationSyntax.SyntaxTree);
-            if (semanticModel.GetDeclaredSymbol(classDeclarationSyntax) is not INamedTypeSymbol classSymbol)
+            if (semanticModel.GetDeclaredSymbol(classDeclarationSyntax, cancellationToken: cancellationToken) is not INamedTypeSymbol classSymbol)
             {
                 // Something went wrong, bail out.
                 continue;

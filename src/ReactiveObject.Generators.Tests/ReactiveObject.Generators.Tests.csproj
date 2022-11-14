@@ -29,7 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ReactiveObject.Generators.Attributes\ReactiveObject.Generators.Attributes.csproj" />
     <ProjectReference Include="..\ReactiveObject.Generators\ReactiveObject.Generators.csproj" />
   </ItemGroup>
 

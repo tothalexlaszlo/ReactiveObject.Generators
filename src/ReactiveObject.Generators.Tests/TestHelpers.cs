@@ -1,17 +1,14 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Immutable;
+
 using Microsoft.CodeAnalysis;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace ReactiveObject.Generators.Tests;
 
-internal class TestHelpers
+internal static class TestHelpers
 {
-    public static (ImmutableArray<Diagnostic> Diagnostics, string Output) GetGeneratedOutput<T>(string source) where T : IIncrementalGenerator, new()
+    public static (ImmutableArray<Diagnostic> Diagnostics, string Output) GetGeneratedOutput<T>(string source)
+        where T : IIncrementalGenerator, new()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
         var references = AppDomain.CurrentDomain.GetAssemblies()

@@ -1,5 +1,5 @@
-﻿using ReactiveObject.Generators.Models;
-using System.Text;
+﻿using System.Text;
+using ReactiveObject.Generators.Models;
 
 namespace ReactiveObject.Generators.Extensions;
 

@@ -1,7 +1,4 @@
-﻿using System.Threading.Tasks;
-using VerifyXunit;
-using Xunit;
-using Xunit.Abstractions;
+﻿using Xunit.Abstractions;
 
 namespace ReactiveObject.Generators.Tests;
 
