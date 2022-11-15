@@ -24,4 +24,5 @@ jobs:
       useMauiCheckDotNetTool: false
       installWindowsSdk: false
       installWorkflows: false
+      dotNetBuild: true
 
