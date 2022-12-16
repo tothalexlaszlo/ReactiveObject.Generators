@@ -20,9 +20,7 @@ jobs:
     with:
       configuration: Release
       productNamespacePrefix: "ReactiveObject"
-      useVisualStudioPreview: false
+      useVisualStudioPreview: true
       useMauiCheckDotNetTool: false
-      installWindowsSdk: false
-      installWorkflows: false
       dotNetBuild: true
 
