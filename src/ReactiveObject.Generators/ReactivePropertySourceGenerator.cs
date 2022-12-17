@@ -75,9 +75,8 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
                     var fullName = attributeContainingTypeSymbol.ToDisplayString();
 
                     // Is the attribute the [ReactiveProperty] attribute?
-                    if (fullName.Equals(ReactivePropertyAttributeFullName, System.StringComparison.Ordinal))
+                    if (fullName.Equals(ReactivePropertyAttributeFullName, StringComparison.Ordinal))
                     {
-                        // Return the property.
                         return classDeclarationSyntax;
                     }
                 }
@@ -102,11 +101,11 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
         // I'm not sure if this is actually necessary, but `[LoggerMessage]` does it, so seems like a good idea!
         var distinctFields = fields.Distinct();
 
-        // Convert each ClassDeclarationSyntax to an EnumToGenerate.
+        // Convert each ClassDeclarationSyntax to a ClassToGenerate.
         var classesToGenerate = GetTypesToGenerate(compilation, distinctFields, context.CancellationToken);
 
-        // If there were errors in the ClassDeclarationSyntax, we won't create a
-        // ClassToGenerate for it, so make sure we have something to generate.
+        /// If there were errors in the <see cref="ClassDeclarationSyntax"/>, we won't create a
+        /// <see cref="ClassToGenerate"/> for it, so make sure we have something to generate.
         foreach (var classToGenerate in classesToGenerate)
         {
             // Generate the source code and add it to the output.
@@ -174,7 +173,6 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
                 }
             }
 
-            // Create an ClassToGenerate for use in the generation phase
             classesToGenerate.Add(new ClassToGenerate(
                 name: name,
                 @namespace: nameSpace,
@@ -188,48 +186,25 @@ public class ReactivePropertySourceGenerator : IIncrementalGenerator
 
     private static string ConvertFieldNameToCamelCase(ReadOnlySpan<char> fieldName)
     {
-        // Remove underscore ('_')
+        // Remove underscore ('_').
         if (fieldName[0] == '_')
         {
             fieldName = fieldName.Slice(1);
         }
 
-        // This can be optimized on .NET6+ with string.Create(); instead of Span<char>.
-        Span<char> buffer = stackalloc char[fieldName.Length];
-        fieldName.CopyTo(buffer);
-
-        // ToUpper
-        buffer[0] = fieldName[0] switch
+        // Shift the character to upper.
+        if (fieldName[0] is >= 'a' and <= 'z')
         {
-            'a' => 'A',
-            'b' => 'B',
-            'c' => 'C',
-            'd' => 'D',
-            'e' => 'E',
-            'f' => 'F',
-            'g' => 'G',
-            'h' => 'H',
-            'i' => 'I',
-            'j' => 'J',
-            'k' => 'K',
-            'l' => 'L',
-            'm' => 'M',
-            'n' => 'N',
-            'o' => 'O',
-            'p' => 'P',
-            'q' => 'Q',
-            'r' => 'R',
-            's' => 'S',
-            't' => 'T',
-            'u' => 'U',
-            'v' => 'V',
-            'w' => 'W',
-            'x' => 'X',
-            'y' => 'Y',
-            'z' => 'Z',
-            _ => fieldName[0]
-        };
+            // This can be optimized on .NET6+ with string.Create(); instead of Span<char>.
+            Span<char> buffer = stackalloc char[fieldName.Length];
+            fieldName.CopyTo(buffer);
 
-        return buffer.ToString();
+            const int distanceBetweenLowAndUpCharactersInAscii = 32;
+            buffer[0] = (char)(fieldName[0] - distanceBetweenLowAndUpCharactersInAscii);
+
+            return buffer.ToString();
+        }
+
+        return fieldName.ToString();
     }
 }
