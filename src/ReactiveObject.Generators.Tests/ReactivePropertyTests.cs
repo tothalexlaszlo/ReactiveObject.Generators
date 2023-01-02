@@ -6,12 +6,6 @@ namespace ReactiveObject.Generators.Tests;
 public class ReactivePropertyTests
 {
     private const string _snapshotsDirectory = "Snapshots";
-    private readonly ITestOutputHelper _output;
-
-    public ReactivePropertyTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public Task CanGenerateReactivePropertyInChildNamespace()
