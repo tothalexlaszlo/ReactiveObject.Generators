@@ -21,7 +21,7 @@ using ReactiveObject.Generators;
 
 namespace MyTestNamespace
 {
-    public class MyTestClass
+    public partial class MyTestClass
     {
         [ReactiveProperty]
         private DateTime _dateTime;
